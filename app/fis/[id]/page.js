@@ -1,53 +1,64 @@
-import React from "react";
+"use client";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 
-async function getTransaction(id) {
-  const res = await fetch(`http://localhost:3001/api/transactions/${id}`);
-  if (!res.ok) throw new Error("Fiş bulunamadı");
-  return res.json();
-}
-
-export default async function FisDetay({ params }) {
+export default function FisDetay() {
+  const params = useParams();
   const { id } = params;
-  let transaction;
-  try {
-    transaction = await getTransaction(id);
-  } catch {
-    return <div>Fiş bulunamadı.</div>;
-  }
+  const [fis, setFis] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!id) return;
+    fetch(`http://localhost:3001/api/transactions/${id}`)
+      .then(res => {
+        if (!res.ok) throw new Error("Fiş bulunamadı");
+        return res.json();
+      })
+      .then(data => setFis(data))
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) return <div className="text-center mt-20">Yükleniyor...</div>;
+  if (error) return <div className="text-center mt-20 text-red-600">{error}</div>;
+  if (!fis) return <div className="text-center mt-20 text-red-600">Fiş bulunamadı</div>;
+
   return (
-    <div className="max-w-md mx-auto bg-white shadow p-6 mt-8 font-mono border rounded">
-      <div className="text-center text-xl font-bold mb-2">{transaction.storeName || "MAĞAZA"}</div>
-      <div className="text-center text-lg mb-4">Ürün İşlem Fişi</div>
-      <div className="flex justify-between mb-2">
-        <span>Tarih:</span>
-        <span>{new Date(transaction.date).toLocaleString()}</span>
+    <div className="max-w-2xl mx-auto p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg mt-10">
+      <h1 className="text-2xl font-bold mb-4 text-blue-700 dark:text-blue-200 text-center">Fiş Detayı</h1>
+      <div className="mb-4 flex flex-col gap-2">
+        <div><span className="font-semibold">Mağaza:</span> {fis.storeName || '-'}</div>
+        <div><span className="font-semibold">İşlem Tipi:</span> {fis.type || '-'}</div>
+        <div><span className="font-semibold">Toplam:</span> <span className="text-blue-700 dark:text-blue-300 font-semibold">{fis.total?.toFixed(2) || '0.00'}₺</span></div>
+        <div><span className="font-semibold">Tarih:</span> {fis.createdAt ? new Date(fis.createdAt).toLocaleString() : '-'}</div>
+        <div><span className="font-semibold">Açıklama:</span> {fis.description || '-'}</div>
+        <div><span className="font-semibold">İşlemi Yapan:</span> {fis.user || '-'}</div>
       </div>
-      <div className="flex justify-between mb-2">
-        <span>İşlem Tipi:</span>
-        <span>{transaction.type}</span>
-      </div>
-      <div className="border-t my-2" />
-      <div className="mb-2 font-semibold">Ürünler:</div>
-      <div>
-        {transaction.items.map((item, i) => (
-          <div key={i} className="flex justify-between text-sm mb-1">
-            <span>{i + 1}. {item.productName}</span>
-            <span>{item.quantity} x {item.unitPrice.toFixed(2)}₺ = {(item.totalPrice).toFixed(2)}₺</span>
-          </div>
-        ))}
-      </div>
-      <div className="border-t my-2" />
-      <div className="flex justify-between font-bold text-lg">
-        <span>GENEL TOPLAM:</span>
-        <span>{transaction.total.toFixed(2)}₺</span>
-      </div>
-      <div className="flex justify-between mt-2 text-sm">
-        <span>İşlemi Yapan:</span>
-        <span>{transaction.user || "-"}</span>
-      </div>
-      {transaction.description && (
-        <div className="mt-2 text-sm">Açıklama: {transaction.description}</div>
-      )}
+      <h2 className="text-lg font-bold mt-6 mb-2">Ürünler</h2>
+      <table className="w-full border rounded shadow bg-white dark:bg-gray-900 mb-4">
+        <thead>
+          <tr className="bg-gray-100 dark:bg-gray-700">
+            <th className="py-2 px-4 text-left">Ürün Adı</th>
+            <th className="py-2 px-4 text-center">Miktar</th>
+            <th className="py-2 px-4 text-center">Birim Fiyat</th>
+            <th className="py-2 px-4 text-center">Toplam</th>
+          </tr>
+        </thead>
+        <tbody>
+          {fis.items && fis.items.length > 0 ? fis.items.map((item, i) => (
+            <tr key={item._id || i} className={i % 2 === 0 ? "bg-gray-50 dark:bg-gray-800" : "bg-white dark:bg-gray-900"}>
+              <td className="py-2 px-4">{item.productName || '-'}</td>
+              <td className="py-2 px-4 text-center">{item.quantity || 0}</td>
+              <td className="py-2 px-4 text-center">{item.unitPrice?.toFixed(2) || '0.00'}₺</td>
+              <td className="py-2 px-4 text-center">{item.totalPrice?.toFixed(2) || '0.00'}₺</td>
+            </tr>
+          )) : (
+            <tr><td colSpan={4} className="text-center py-4">Ürün yok</td></tr>
+          )}
+        </tbody>
+      </table>
     </div>
   );
-} 
+}

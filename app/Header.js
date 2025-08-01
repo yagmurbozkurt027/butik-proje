@@ -1,60 +1,160 @@
+"use client";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
-export default function Header({ darkMode, toggleDarkMode }) {
-  const [username, setUsername] = useState("");
+export default function Header() {
+  const [isDark, setIsDark] = useState(false);
+  const [photo, setPhoto] = useState("");
+  const [role, setRole] = useState("user");
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const name = localStorage.getItem("username");
-      if (name) setUsername(name);
-    }
+    // Karanlık mod kontrolü
+    const checkTheme = () => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    };
+    
+    checkTheme();
+    
+    // Kullanıcı bilgilerini al
+    const userPhoto = localStorage.getItem("photo");
+    const userRole = localStorage.getItem("role");
+    
+    if (userPhoto) setPhoto(userPhoto);
+    if (userRole) setRole(userRole);
+
+    // Intersection Observer için
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animate-fade-in');
+        }
+      });
+    });
+    
+    // Theme değişikliklerini dinle
+    const themeObserver = new MutationObserver(checkTheme);
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+    
+    return () => {
+      observer.disconnect();
+      themeObserver.disconnect();
+    };
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('username');
-    window.location.href = '/login';
+  const toggleDarkMode = () => {
+    document.documentElement.classList.toggle("dark");
+    setIsDark(!isDark);
   };
 
   return (
-    <header className="w-full bg-white dark:bg-gray-900 shadow py-4 px-6 flex items-center justify-between">
-      <div className="text-2xl font-bold text-blue-600 dark:text-blue-200">Butik Proje</div>
-      <nav className="flex gap-6 items-center">
-        <Link href="/" className="hover:text-blue-500 dark:text-gray-200 dark:hover:text-blue-300">Anasayfa</Link>
-        <Link href="/urunler" className="hover:text-blue-500 dark:text-gray-200 dark:hover:text-blue-300">Ürünler</Link>
-        <Link href="/stoklarim" className="hover:text-blue-500 dark:text-gray-200 dark:hover:text-blue-300">Stoklarım</Link>
-        <Link href="/fis-ekle" className="hover:text-blue-500 dark:text-gray-200 dark:hover:text-blue-300">Yeni Fiş Ekle</Link>
-        {username ? (
-          <button
-            onClick={handleLogout}
-            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-          >
-            Çıkış Yap
-          </button>
-        ) : (
-          <Link href="/login" className="hover:text-blue-500 dark:text-gray-200 dark:hover:text-blue-300">Giriş</Link>
+    <header className={`flex items-center justify-between px-4 md:px-8 py-4 shadow-lg border-b transition-colors duration-300 ${
+      isDark 
+        ? 'bg-gray-900 border-gray-700' 
+        : 'bg-white border-gray-200'
+    }`}>
+      <div className="flex items-center gap-3">
+        <img
+          src={photo || "https://ui-avatars.com/api/?name=Kullanıcı"}
+          alt="Profil Fotoğrafı"
+          className={`w-8 h-8 md:w-10 md:h-10 rounded-full object-cover border transition-colors ${
+            isDark ? 'border-gray-600' : 'border-gray-300'
+          }`}
+        />
+        <div className={`text-lg md:text-2xl font-bold transition-colors ${
+          isDark ? 'text-blue-400' : 'text-blue-600'
+        }`}>
+          Butik Proje
+        </div>
+      </div>
+      
+      {/* Desktop Menü */}
+      <nav className="hidden md:flex gap-6 items-center">
+        <Link href="/" className={`transition-colors ${
+          isDark ? 'text-gray-300 hover:text-blue-400' : 'text-gray-700 hover:text-blue-600'
+        }`}>
+          Anasayfa
+        </Link>
+        <Link href="/urunler" className={`transition-colors ${
+          isDark ? 'text-gray-300 hover:text-blue-400' : 'text-gray-700 hover:text-blue-600'
+        }`}>
+          Ürünler
+        </Link>
+        <Link href="/stoklarim" className={`transition-colors ${
+          isDark ? 'text-gray-300 hover:text-blue-400' : 'text-gray-700 hover:text-blue-600'
+        }`}>
+          Stoklarım
+        </Link>
+        <Link href="/fis" className={`transition-colors ${
+          isDark ? 'text-gray-300 hover:text-blue-400' : 'text-gray-700 hover:text-blue-600'
+        }`}>
+          Fişlerim
+        </Link>
+        <Link href="/fis-ekle" className={`transition-colors ${
+          isDark ? 'text-gray-300 hover:text-blue-400' : 'text-gray-700 hover:text-blue-600'
+        }`}>
+          Yeni Fiş Ekle
+        </Link>
+        <Link href="/favoriler" className={`transition-colors ${
+          isDark ? 'text-gray-300 hover:text-pink-400' : 'text-gray-700 hover:text-pink-600'
+        }`}>
+          Favorilerim
+        </Link>
+        <Link href="/gamification" className={`transition-colors ${
+          isDark ? 'text-gray-300 hover:text-yellow-400' : 'text-gray-700 hover:text-yellow-600'
+        }`}>
+          🎮 Gamification
+        </Link>
+        <Link href="/profil" className={`transition-colors ${
+          isDark ? 'text-gray-300 hover:text-blue-400' : 'text-gray-700 hover:text-blue-600'
+        }`}>
+          Profilim
+        </Link>
+        <Link href="/chat" className={`transition-colors ${
+          isDark ? 'text-gray-300 hover:text-green-400' : 'text-gray-700 hover:text-green-600'
+        }`}>
+          💬 Chat
+        </Link>
+        {role === "admin" && (
+          <>
+            <Link href="/admin" className={`font-bold transition-colors ${
+              isDark ? 'text-gray-300 hover:text-red-400' : 'text-gray-700 hover:text-red-600'
+            }`}>
+              Admin Paneli
+            </Link>
+            <Link href="/raporlar" className={`font-bold transition-colors ${
+              isDark ? 'text-gray-300 hover:text-green-400' : 'text-gray-700 hover:text-green-600'
+            }`}>
+              📊 Raporlar
+            </Link>
+          </>
         )}
         <button
-          onClick={toggleDarkMode}
-          className="ml-4 px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+          className={`ml-4 px-3 py-1 rounded text-white transition-colors ${
+            isDark ? 'bg-red-600 hover:bg-red-700' : 'bg-red-500 hover:bg-red-600'
+          }`}
+          onClick={() => {
+            localStorage.removeItem("token");
+            localStorage.removeItem("userId");
+            localStorage.removeItem("username");
+            window.location.href = "/login";
+          }}
         >
-          {darkMode ? '☀️' : '🌙'}
+          Çıkış Yap
+        </button>
+        <button
+          onClick={toggleDarkMode}
+          className={`ml-4 px-3 py-1 rounded border transition-colors ${
+            isDark 
+              ? 'bg-gray-700 hover:bg-gray-600 text-gray-200 border-gray-600' 
+              : 'bg-gray-200 hover:bg-gray-300 text-gray-800 border-gray-300'
+          }`}
+        >
+          {isDark ? '☀️' : '🌙'}
         </button>
       </nav>
     </header>
   );
 }
-
-const stoklaraEkle = async () => {
-  // Kullanıcı id'sini localStorage veya context'ten al
-  const userId = localStorage.getItem("userId");
-  const res = await fetch("http://localhost:3001/api/users/user-stock", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId, productId: params.id, quantity: 1 }),
-  });
-  const data = await res.json().catch(() => ({}));
-  alert(data.error || "Bir hata oluştu!");
-};

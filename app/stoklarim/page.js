@@ -1,14 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
-import products from "../urunler/products";
 
 export default function StoklarimPage() {
   const [stocks, setStocks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [products, setProducts] = useState([]);
 
   useEffect(() => {
     fetchStocks();
+    fetchProducts();
   }, []);
 
   const fetchStocks = () => {
@@ -26,32 +27,46 @@ export default function StoklarimPage() {
       .catch(() => setLoading(false));
   };
 
-  const updateStock = async (productId, newQuantity) => {
-    console.log("updateStock çağrıldı:", { productId, newQuantity }); // DEBUG
+  const fetchProducts = () => {
+    fetch("http://localhost:3001/api/products")
+      .then(res => res.json())
+      .then(data => setProducts(data));
+  };
+
+  const updateStock = async (productId, changeAmount) => {
+    console.log("updateStock çağrıldı:", { productId, changeAmount }); // DEBUG
     setIsUpdating(true);
     const userId = localStorage.getItem("userId");
     const token = localStorage.getItem("token");
     if (!userId || !token) return;
-    await fetch("http://localhost:3001/api/users/user-stock", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify({ userId, productId, quantity: newQuantity }),
-    });
-    await fetchStocks();
-    setIsUpdating(false);
+    
+    try {
+      await fetch("http://localhost:3001/api/users/user-stock", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ userId, productId, quantity: changeAmount }),
+      });
+      await fetchStocks();
+    } catch (error) {
+      console.error("Stok güncelleme hatası:", error);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handleIncrease = (productId, currentQuantity) => {
-    updateStock(productId, currentQuantity + 1);
+    // Sadece 1 artır
+    updateStock(productId, 1);
   };
 
   const handleDecrease = (productId, currentQuantity) => {
     console.log("handleDecrease:", { productId, currentQuantity }); // DEBUG
     if (currentQuantity > 1) {
-      updateStock(productId, currentQuantity - 1);
+      // Sadece 1 azalt
+      updateStock(productId, -1);
     } else {
       // 1'den küçükse ürünü stoklardan sil
       removeStock(productId);
@@ -91,7 +106,8 @@ export default function StoklarimPage() {
           </thead>
           <tbody>
             {stocks.map((item, i) => {
-              const product = products.find(p => p.id === item.productId);
+              const product = products.find(p => String(p._id) === String(item.productId));
+              if (!product) return null;
               const maxStock = product ? product.stock : Infinity;
               const disablePlus = item.quantity >= maxStock;
               return (
@@ -115,6 +131,17 @@ export default function StoklarimPage() {
                       disabled={disablePlus || isUpdating}
                     >
                       +
+                    </button>
+                    <button
+                      onClick={() => removeStock(item.productId)}
+                      className="bg-gray-300 hover:bg-red-600 text-gray-700 hover:text-white rounded px-2 py-1 flex items-center justify-center"
+                      title="Ürünü sil"
+                      disabled={isUpdating}
+                    >
+                      {/* Çöp kutusu SVG ikonu */}
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
                     </button>
                   </td>
                 </tr>
