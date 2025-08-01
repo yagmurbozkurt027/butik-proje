@@ -1,15 +1,15 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+// import { loadStripe } from '@stripe/stripe-js';
+// import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { toast } from 'react-toastify';
 
 // Stripe public key (test key)
-const stripePromise = loadStripe('pk_test_...'); // Gerçek key ile değiştirilecek
+// const stripePromise = loadStripe('pk_test_...'); // Gerçek key ile değiştirilecek
 
 const CheckoutForm = ({ amount, onSuccess }) => {
-  const stripe = useStripe();
-  const elements = useElements();
+  // const stripe = useStripe();
+  // const elements = useElements();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -18,45 +18,49 @@ const CheckoutForm = ({ amount, onSuccess }) => {
     setLoading(true);
     setError(null);
 
-    if (!stripe || !elements) {
-      return;
-    }
+    // Stripe functionality temporarily disabled
+    toast.info('Ödeme sistemi şu an aktif değil');
+    setLoading(false);
+    
+    // if (!stripe || !elements) {
+    //   return;
+    // }
 
-    try {
-      // Ödeme niyeti oluştur
-      const response = await fetch('/api/payments/create-payment-intent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          amount: amount,
-          currency: 'try'
-        }),
-      });
+    // try {
+    //   // Ödeme niyeti oluştur
+    //   const response = await fetch('/api/payments/create-payment-intent', {
+    //     method: 'POST',
+    //     headers: {
+    //       'Content-Type': 'application/json',
+    //     },
+    //     body: JSON.stringify({
+    //       amount: amount,
+    //       currency: 'try'
+    //     }),
+    //   });
 
-      const { clientSecret } = await response.json();
+    //   const { clientSecret } = await response.json();
 
-      // Ödemeyi onayla
-      const { error: paymentError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: elements.getElement(CardElement),
-        }
-      });
+    //   // Ödemeyi onayla
+    //   const { error: paymentError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+    //     payment_method: {
+    //       card: elements.getElement(CardElement),
+    //     }
+    //   });
 
-      if (paymentError) {
-        setError(paymentError.message);
-        toast.error('Ödeme başarısız: ' + paymentError.message);
-      } else {
-        toast.success('Ödeme başarıyla tamamlandı!');
-        onSuccess(paymentIntent);
-      }
-    } catch (err) {
-      setError('Ödeme işlemi sırasında bir hata oluştu');
-      toast.error('Ödeme işlemi sırasında bir hata oluştu');
-    } finally {
-      setLoading(false);
-    }
+    //   if (paymentError) {
+    //     setError(paymentError.message);
+    //     toast.error('Ödeme başarısız: ' + paymentError.message);
+    //   } else {
+    //     toast.success('Ödeme başarıyla tamamlandı!');
+    //     onSuccess(paymentIntent);
+    //   }
+    // } catch (err) {
+    //   setError('Ödeme işlemi sırasında bir hata oluştu');
+    //   toast.error('Ödeme işlemi sırasında bir hata oluştu');
+    // } finally {
+    //   setLoading(false);
+    // }
   };
 
   const cardElementOptions = {
@@ -84,7 +88,8 @@ const CheckoutForm = ({ amount, onSuccess }) => {
             Kart Bilgileri
           </label>
           <div className="border border-gray-300 rounded-md p-3">
-            <CardElement options={cardElementOptions} />
+            <p className="text-gray-500">Ödeme sistemi şu an aktif değil</p>
+            {/* <CardElement options={cardElementOptions} /> */}
           </div>
         </div>
 
@@ -96,10 +101,10 @@ const CheckoutForm = ({ amount, onSuccess }) => {
 
         <button
           type="submit"
-          disabled={!stripe || loading}
+          disabled={loading}
           className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
         >
-          {loading ? 'İşleniyor...' : `₺${amount} Öde`}
+          {loading ? 'İşleniyor...' : 'Ödeme Yap'}
         </button>
       </div>
     </form>
@@ -209,12 +214,12 @@ export default function OdemePage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Ödeme Formu */}
           <div>
-            <Elements stripe={stripePromise}>
+            {/* <Elements stripe={stripePromise}> */}
               <CheckoutForm 
                 amount={amount} 
                 onSuccess={handlePaymentSuccess}
               />
-            </Elements>
+            {/* </Elements> */}
           </div>
 
           {/* Sipariş Özeti */}

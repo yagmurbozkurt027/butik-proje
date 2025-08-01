@@ -112,11 +112,6 @@ export default function Header() {
         }`}>
           Profilim
         </Link>
-        <Link href="/chat" className={`transition-colors ${
-          isDark ? 'text-gray-300 hover:text-green-400' : 'text-gray-700 hover:text-green-600'
-        }`}>
-          💬 Chat
-        </Link>
         {role === "admin" && (
           <>
             <Link href="/admin" className={`font-bold transition-colors ${
