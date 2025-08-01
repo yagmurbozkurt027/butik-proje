@@ -14,10 +14,5 @@
   ],
   "env": {
     "NEXT_PUBLIC_API_URL": "https://your-backend-url.vercel.app"
-  },
-  "functions": {
-    "app/api/**/*.js": {
-      "maxDuration": 10
-    }
   }
 } 
